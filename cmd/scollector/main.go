@@ -238,6 +238,7 @@ func main() {
 	collect.Debug = *flagDebug
 	util.Debug = *flagDebug
 	collect.DisableDefaultCollectors = conf.DisableSelf
+	collectors.DisableSelf = conf.DisableSelf
 	c := collectors.Search(conf.Filter)
 	if len(c) == 0 {
 		slog.Fatalf("Filter %v matches no collectors.", conf.Filter)

@@ -33,6 +33,8 @@ func (c *IntervalCollector) Init() {
 	}
 }
 
+var DisableSelf bool
+
 func (c *IntervalCollector) Run(dpchan chan<- *opentsdb.DataPoint) {
 	if c.Enable != nil {
 		go func() {
@@ -45,7 +47,7 @@ func (c *IntervalCollector) Run(dpchan chan<- *opentsdb.DataPoint) {
 			}
 		}()
 	}
-	tags := opentsdb.TagSet{"collector": c.Name(), "os": runtime.GOOS}
+
 	for {
 		interval := c.Interval
 		if interval == 0 {
@@ -61,8 +63,11 @@ func (c *IntervalCollector) Run(dpchan chan<- *opentsdb.DataPoint) {
 				slog.Errorf("%v: %v", c.Name(), err)
 				result = 1
 			}
-			Add(&md, "scollector.collector.duration", timeFinish.Seconds(), tags, metadata.Gauge, metadata.Second, "Duration in seconds for each collector run.")
-			Add(&md, "scollector.collector.error", result, tags, metadata.Gauge, metadata.Ok, "Status of collector run. 1=Error, 0=Success.")
+			if !DisableSelf {
+				tags := opentsdb.TagSet{"collector": c.Name(), "os": runtime.GOOS}
+				Add(&md, "scollector.collector.duration", timeFinish.Seconds(), tags, metadata.Gauge, metadata.Second, "Duration in seconds for each collector run.")
+				Add(&md, "scollector.collector.error", result, tags, metadata.Gauge, metadata.Ok, "Status of collector run. 1=Error, 0=Success.")
+			}
 			for _, dp := range md {
 				dpchan <- dp
 			}
