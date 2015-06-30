@@ -2,6 +2,16 @@
 cd $GOPATH/src/bosun.org
 DIRS=`find . -maxdepth 1 -type d -iregex './[^._].*'`
 
+O=bosun-monitor
+R=bosun
+SHA=$TRAVIS_COMMIT
+if [ "$TRAVIS" != '' ]; then
+	setStatus -o $O -r $R -s pending -c fmt -d="Testing GoFmt" -sha=$SHA
+	setStatus -o $O -r $R -s pending -c gen -d="Testing go generate" -sha=$SHA
+	setStatus -o $O -r $R -s pending -c vet -d="Running Go vet" -sha=$SHA
+	setStatus -o $O -r $R -s pending -c tests -d="Running Tests" -sha=$SHA
+fi
+
 echo -e "\nChecking gofmt -s -w for all folders that don't start with . or _"
 GOFMTRESULT=0
 GOFMTOUT=$(gofmt -l -s -w $DIRS);
