@@ -28,6 +28,12 @@ fi
 echo -e "\nRunning go vet bosun.org/..."
 go vet bosun.org/...
 GOVETRESULT=$?
+GOVETSTATUS=success
+GOVETMSG="go vet ok"
+if [ "$GOVETRESULT" ]; then
+	GOVETSTATUS=failure
+	GOVETMSG="go vet found problems"
+fi
 
 echo -e "\nGetting esc"
 go get -u -v github.com/mjibson/esc
@@ -50,6 +56,7 @@ GOTESTRESULT=$?
 
 if [ "$TRAVIS" != '' ]; then
 	setStatus -o $O -r $R -s=$GOFMTSTATUS -c fmt -d="$GOFMTMSG" -sha=$SHA
+	setStatus -o $O -r $R -s=$GOVETSTATUS -c vet -d="$GOVETMSG" -sha=$SHA
 fi
 
 let "RESULT = $GOFMTRESULT | $GOVETRESULT | $GOTESTRESULT | $GOGENERATERESULT | $GOGENERATEDIFFRESULT"
