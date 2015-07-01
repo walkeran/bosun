@@ -14,11 +14,15 @@ fi
 
 echo -e "\nChecking gofmt -s -w for all folders that don't start with . or _"
 GOFMTRESULT=0
+GOFMTSTATUS=success
+GOFMTMSG="go fmt ok"
 GOFMTOUT=$(gofmt -l -s -w $DIRS);
 if [ "$GOFMTOUT" != '' ]; then
     echo "The following files need 'gofmt -s -w':"
     echo "$GOFMTOUT"
     GOFMTRESULT=1
+	GOFMTSTATUS=failure
+	GOFMTMSG="go fmt -s needed"
 fi
 
 echo -e "\nRunning go vet bosun.org/..."
@@ -42,6 +46,10 @@ fi
 echo -e "\nRunning go test bosun.org/..."
 go test bosun.org/...
 GOTESTRESULT=$?
+
+if [ "$TRAVIS" != '' ]; then
+	setStatus -o $O -r $R -s $GOFMTRESULT -c fmt -d=$GOFMTMSG -sha=$SHA
+fi
 
 let "RESULT = $GOFMTRESULT | $GOVETRESULT | $GOTESTRESULT | $GOGENERATERESULT | $GOGENERATEDIFFRESULT"
 exit $RESULT
