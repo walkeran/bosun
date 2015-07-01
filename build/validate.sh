@@ -5,34 +5,26 @@ DIRS=`find . -maxdepth 1 -type d -iregex './[^._].*'`
 O=bosun-monitor
 R=bosun
 SHA=`git rev-parse ${TRAVIS_COMMIT}^2`
+BUILDMSG=""
 if [ "$TRAVIS" != '' ]; then
-	setStatus -o $O -r $R -s pending -c fmt -d="Testing GoFmt" -sha=$SHA
-	setStatus -o $O -r $R -s pending -c gen -d="Testing go generate" -sha=$SHA
-	setStatus -o $O -r $R -s pending -c vet -d="Running Go vet" -sha=$SHA
-	setStatus -o $O -r $R -s pending -c tests -d="Running Tests" -sha=$SHA
+	setStatus -o $O -r $R -s pending -c bosun -d="Running validation build in travis" -sha=$SHA
 fi
 
 echo -e "\nChecking gofmt -s -w for all folders that don't start with . or _"
 GOFMTRESULT=0
-GOFMTSTATUS="success"
-GOFMTMSG="go fmt ok"
 GOFMTOUT=$(gofmt -l -s -w $DIRS);
 if [ "$GOFMTOUT" != '' ]; then
     echo "The following files need 'gofmt -s -w':"
     echo "$GOFMTOUT"
     GOFMTRESULT=1
-	GOFMTSTATUS="failure"
-	GOFMTMSG="go fmt -s needed"
+	BUILDMSG="go fmt -s needed. "
 fi
 
 echo -e "\nRunning go vet bosun.org/..."
 go vet bosun.org/...
 GOVETRESULT=$?
-GOVETSTATUS=success
-GOVETMSG="go vet ok"
 if [ "$GOVETRESULT" != 0 ]; then
-	GOVETSTATUS=failure
-	GOVETMSG="go vet found problems"
+	BUILDMSG="${BUILDMSG}go vet found problems. "
 fi
 
 echo -e "\nGetting esc"
@@ -43,31 +35,30 @@ go generate bosun.org/...
 GOGENERATERESULT=$?
 GOGENERATEDIFF=$(git diff --exit-code --name-only)
 GOGENERATEDIFFRESULT=0
-GOGENSTATUS=success
-GOGENMSG="go generate ok"
 if [ "$GOGENERATEDIFF" != '' ]; then
     echo "Go generate needs to be run. The following files have changed:"
     echo "$GOGENERATEDIFF"
 	GOGENSTATUS=failure
-	GOGENMSG="go generate needs to run"
+	BUILDMSG="${BUILDMSG}go generate needs to run. "
     GOGENERATEDIFFRESULT=1
 fi
 
 echo -e "\nRunning go test bosun.org/..."
 go test bosun.org/...
 GOTESTRESULT=$?
-GOTESTSTATUS=success
-GOTESTMSG="tests pass!"
 if [ "$GOTESTRESULT" != 0 ]; then
 	GOTESTSTATUS=failure
-	GOTESTMSG="failing tests"
+	BUILDMSG="${BUILDMSG}tests fail."
+fi
+
+BUILDSTATUS=failure
+if [ "$BUILDMSG" == '' ]; then
+	BUILDMSG="All checks Passed!"
+	BUILDSTATUS=success
 fi
 
 if [ "$TRAVIS" != '' ]; then
-	setStatus -o $O -r $R -s=$GOFMTSTATUS -c fmt -d="$GOFMTMSG" -sha=$SHA
-	setStatus -o $O -r $R -s=$GOVETSTATUS -c vet -d="$GOVETMSG" -sha=$SHA
-	setStatus -o $O -r $R -s=$GOGENSTATUS -c gen -d="$GOGENMSG" -sha=$SHA
-	setStatus -o $O -r $R -s=$GOTESTSTATUS -c tests -d="$GOTESTMSG" -sha=$SHA
+	setStatus -o $O -r $R -s=$BUILDSTATUS -c bosun -d="$BUILDMSG" -sha=$SHA
 fi
 
 let "RESULT = $GOFMTRESULT | $GOVETRESULT | $GOTESTRESULT | $GOGENERATERESULT | $GOGENERATEDIFFRESULT"
