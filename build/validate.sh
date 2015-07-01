@@ -30,7 +30,7 @@ go vet bosun.org/...
 GOVETRESULT=$?
 GOVETSTATUS=success
 GOVETMSG="go vet ok"
-if [ "$GOVETRESULT" ]; then
+if [ "$GOVETRESULT" != 0 ]; then
 	GOVETSTATUS=failure
 	GOVETMSG="go vet found problems"
 fi
@@ -43,20 +43,31 @@ go generate bosun.org/...
 GOGENERATERESULT=$?
 GOGENERATEDIFF=$(git diff --exit-code --name-only)
 GOGENERATEDIFFRESULT=0
+GOGENSTATUS=success
+GOGENMSG="go generate ok"
 if [ "$GOGENERATEDIFF" != '' ]; then
     echo "Go generate needs to be run. The following files have changed:"
     echo "$GOGENERATEDIFF"
+	GOGENSTATUS=failure
+	GOGENMSG="go generate needs to run"
     GOGENERATEDIFFRESULT=1
 fi
 
 echo -e "\nRunning go test bosun.org/..."
 go test bosun.org/...
 GOTESTRESULT=$?
-
+GOTESTSTATUS=success
+GOTESTMSG="tests pass!"
+if [ "$GOTESTRESULT" != 0 ]; then
+	GOTESTSTATUS=failure
+	GOTESTMSG="failing tests"
+fi
 
 if [ "$TRAVIS" != '' ]; then
 	setStatus -o $O -r $R -s=$GOFMTSTATUS -c fmt -d="$GOFMTMSG" -sha=$SHA
 	setStatus -o $O -r $R -s=$GOVETSTATUS -c vet -d="$GOVETMSG" -sha=$SHA
+	setStatus -o $O -r $R -s=$GOGENSTATUS -c gen -d="$GOGENMSG" -sha=$SHA
+	setStatus -o $O -r $R -s=$GOTESTSTATUS -c tests -d="$GOTESTMSG" -sha=$SHA
 fi
 
 let "RESULT = $GOFMTRESULT | $GOVETRESULT | $GOTESTRESULT | $GOGENERATERESULT | $GOGENERATEDIFFRESULT"
