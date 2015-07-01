@@ -47,6 +47,7 @@ echo -e "\nRunning go test bosun.org/..."
 go test bosun.org/...
 GOTESTRESULT=$?
 
+set -vx
 if [ "$TRAVIS" != '' ]; then
 	setStatus -o $O -r $R -s=$GOFMTSTATUS -c fmt -d=$GOFMTMSG -sha=$SHA
 fi
