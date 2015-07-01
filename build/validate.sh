@@ -4,7 +4,7 @@ DIRS=`find . -maxdepth 1 -type d -iregex './[^._].*'`
 
 O=bosun-monitor
 R=bosun
-SHA=$TRAVIS_COMMIT
+SHA=`git rev-parse ${TRAVIS_COMMIT}^2`
 if [ "$TRAVIS" != '' ]; then
 	setStatus -o $O -r $R -s pending -c fmt -d="Testing GoFmt" -sha=$SHA
 	setStatus -o $O -r $R -s pending -c gen -d="Testing go generate" -sha=$SHA
